@@ -8,6 +8,8 @@
 #include <QPainter>
 #include <QTimer>
 #include <QDebug>
+#include <QSlider>
+#include <QSpinBox>
 #include <QFileDialog>
 #include <QCloseEvent>
 #include <QMessageBox>
@@ -42,7 +44,7 @@ private slots:
     void on_pushButton_start_clicked();
     void on_pushButton_pause_clicked();
     void on_pushButton_stop_clicked();
-
+    void GetValue(int value);
 
 private:
     Ui::MainWindow *ui;
@@ -58,6 +60,7 @@ private:
     QTimer *timer;
     QImage qimg;
 
+    int gaussianBlurKernal;
 
     void closeEvent(QCloseEvent *enent);
 };

@@ -21,11 +21,46 @@ MainWindow::MainWindow(QWidget *parent) :
     isStop = false;
     isLaneLine = true;
     isSign = true;
+    gaussianBlurKernal = 1;     //测试调节用，改变高斯模糊核
+
+
+    //调节控制QSlider初始化
+//    int nMin = 0;
+//    int nMax = 200;
+//    int nSingleStep = 10;
+    int nMin = 1;
+    int nMax = 15;
+    int nSingleStep = 2;
+    // 微调框
+    QSpinBox *pSpinBox = ui->spinBox;
+    pSpinBox->setMinimum(nMin);  // 最小值
+    pSpinBox->setMaximum(nMax);  // 最大值
+    pSpinBox->setSingleStep(nSingleStep);  // 步长
+    // 滑动条
+    QSlider *pSlider = ui->horizontalSlider;
+    pSlider->setOrientation(Qt::Horizontal);  // 水平方向
+    pSlider->setMinimum(nMin);  // 最小值
+    pSlider->setMaximum(nMax);  // 最大值
+    pSlider->setSingleStep(nSingleStep);  // 步长
+    pSlider->setTickPosition(QSlider::TicksAbove);  //刻度
+    // 连接信号槽（相互改变）
+    connect(pSpinBox, SIGNAL(valueChanged(int)), pSlider, SLOT(setValue(int)));
+    connect(pSlider, SIGNAL(valueChanged(int)), pSpinBox, SLOT(setValue(int)));
+    pSpinBox->setValue(1);
+
+    connect(pSpinBox, SIGNAL(valueChanged(int)), this, SLOT(GetValue(int)));    //连接程序与滑动条，接收值
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::GetValue(int value){
+    int val = ui->spinBox->value();
+    if(val%2!=0)
+        this->gaussianBlurKernal = val;
+    cout<<val<<endl;    //val与value二选一都行
 }
 
 Mat MainWindow::getframe(Mat image){
@@ -44,6 +79,7 @@ Mat MainWindow::getframe(Mat image){
 
 
     cvtColor(image, image, CV_BGR2RGB);
+    GaussianBlur(image, image, Size(gaussianBlurKernal, gaussianBlurKernal), 2, 2);
     return image;
 }
 
@@ -213,7 +249,6 @@ void MainWindow::on_pushButton_stop_clicked(){
         cout << "debug:执行结束事件" << endl;
     }
 }
-
 
 
 /**
