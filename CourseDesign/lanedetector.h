@@ -16,7 +16,7 @@ private:
     double left_m;  //
 
 public:
-    void doDetection();             //开始检测
+    void doDetection(String videoPath);             //开始检测
     Mat deNoise(Mat inputImage);  // 对输入图像应用高斯模糊
     Mat edgeDetector(Mat img_noise);  // 过滤图像，只获取边缘
     Mat mask(Mat img_edges);  // 掩盖边缘图像，只关心ROI
