@@ -11,9 +11,9 @@
 using namespace std;
 
 //运行检测代码块
-void LaneDetector::doDetection(){
+void LaneDetector::doDetection(String videoPath){
     // The input argument is the location of the video
-    cv::VideoCapture cap("F:\\QT_code\\LiuWenguo_homework\\CourseDesign\\loadVideo3.mp4");
+    cv::VideoCapture cap(videoPath);
     if (!cap.isOpened())
         return ;
 
@@ -34,7 +34,7 @@ void LaneDetector::doDetection(){
         // Capture frame
         if (!cap.read(frame))
             break;
-        if(waitKey(5)==27)
+        if(waitKey(1)==27)
             break;
 
         //图像缩小
@@ -45,19 +45,19 @@ void LaneDetector::doDetection(){
 
         // 使用高斯滤波器去噪图像
         img_denoise = deNoise(frame);
-//        imshow("高斯滤波器去噪图像",frame);
+        imshow("高斯滤波器去噪图像",frame);
 
         // 检测图像中的边缘
         img_edges = edgeDetector(img_denoise);
-//        imshow("检测图像中的边缘",img_edges);
+        imshow("检测图像中的边缘",img_edges);
 
         // 对图像进行掩码，只得到ROI
         img_mask = mask(img_edges);
-//        imshow("对图像进行掩码，只得到ROI",img_mask);
+        imshow("对图像进行掩码，只得到ROI",img_mask);
 
         // 获取裁剪图像中的霍夫线
         lines = houghLines(img_mask);
-    //    imshow("裁剪图像中的霍夫线",lines);
+     //   imshow("裁剪图像中的霍夫线",lines);
 
         if (!lines.empty())
         {
@@ -72,8 +72,6 @@ void LaneDetector::doDetection(){
 
             // 情节车道检测
             flag_plot = plotLane(frame, lane, turn);
-
-//            cv::waitKey(1);
         }
         else {
             flag_plot = -1;
@@ -123,6 +121,7 @@ void LaneDetector::streetSign(Mat img_original){
     findContours(img_dilate, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));//寻找轮廓
 //    cout << contours.size() << endl;
 
+
     for (int i = 0; i < contours.size(); i++){
         double area = contourArea(Mat(contours[i]),false);
         if(area > 0.055*576*324 || area <0.0012*576*324)
@@ -134,14 +133,6 @@ void LaneDetector::streetSign(Mat img_original){
         Point2f fourPoint2f[4];
         //将rectPoint变量中存储的坐标值放到 fourPoint的数组中
         rect.points(fourPoint2f);
-        Scalar color = (0, 0, 255);//蓝色线画轮廓
-        //根据得到的四个点的坐标  绘制矩形
-        for (int i = 0; i < 3; i++) {
-            line(img_original, fourPoint2f[i], fourPoint2f[i + 1], color, 3);
-        }
-        line(img_original, fourPoint2f[3], fourPoint2f[0], color, 3);
-
-
         double x,y,width,height;
         x = y = width = height = 0;
         x = fourPoint2f[1].x;
@@ -149,20 +140,22 @@ void LaneDetector::streetSign(Mat img_original){
         width = fabs(fourPoint2f[0].x - fourPoint2f[3].x);
         height = fabs(fourPoint2f[0].y - fourPoint2f[1].y);
 
-        for(int i=0;i<4;i++){
-            cout << fourPoint2f[i] << "****" << endl;
 
+        if(width/height>1.2 && width/height<2.5){  //根据矩形的长宽比  圈出标志牌
+            //根据得到的四个点的坐标  绘制矩形
+            Scalar color = (0, 0, 255);//蓝色线画轮廓
+            for (int i = 0; i < 3; i++) {
+                line(img_original, fourPoint2f[i], fourPoint2f[i + 1], color, 3);
+            }
+            line(img_original, fourPoint2f[3], fourPoint2f[0], color, 3);
+
+            //显示裁剪后的图片
+            if(x>50 && y>50 && width >50 && height >20){
+                Mat roi = img_original(Rect(x,y,width,height));
+                imshow("裁剪后的图片",roi);
+            }
         }
-
-cout << x << "-" << y << "-" << width << "-" << height << endl;
-
-        if(x>10 && y>10 && width>80 && height>30){
-            Mat roi = img_original(Rect(x,y,width,height));
-            imshow("裁剪后的图片",roi);
-        }
-
     }
-
 }
 
 // 图像模糊
@@ -219,10 +212,29 @@ Mat LaneDetector::mask(Mat img_edges) {
     Mat output;
     Mat mask = Mat::zeros(img_edges.size(), img_edges.type());
     Point pts[4] = {
-        Point(0,368),    //左下角
-        Point(100,280),   //左上角
-        Point(380,280),
-        Point(500,368)    //右下角
+        //非刘文果给的视频参数   loadVideo.mp4
+        Point(80,368),    //左下角
+        Point(120,280),   //左上角
+        Point(600,280),
+        Point(800,368)    //右下角
+
+//        //刘文果给的视频参数   loadVideo1.mp4
+//         Point(-120,368),    //左下角
+//         Point(80,250),   //左上角
+//         Point(290,250),
+//         Point(450,368)    //右下角
+
+//        //非刘文果给的视频参数   loadVideo2.mp4
+//        Point(-60,368),    //左下角
+//        Point(80,220),   //左上角
+//        Point(450,220),
+//        Point(600,368)    //右下角
+
+//        //非刘文果给的视频参数   loadVideo3.mp4
+//         Point(-90,368),    //左下角
+//         Point(40,235),   //左上角
+//         Point(350,235),
+//         Point(650,368)    //右下角
     };
 
     // 创建一个二元多边形掩模
@@ -230,7 +242,7 @@ Mat LaneDetector::mask(Mat img_edges) {
     // 将边缘图像和蒙版相乘得到输出
     bitwise_and(img_edges, mask, output);
 
-//    imshow("mask",mask);
+    imshow("mask",mask);
     return output;
 }
 
