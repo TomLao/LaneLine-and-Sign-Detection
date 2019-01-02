@@ -7,6 +7,163 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include "lanedetector.h"
+#include "iostream"
+using namespace std;
+
+//运行检测代码块
+void LaneDetector::doDetection(){
+    // The input argument is the location of the video
+    cv::VideoCapture cap("F:\\QT_code\\LiuWenguo_homework\\CourseDesign\\loadVideo3.mp4");
+    if (!cap.isOpened())
+        return ;
+
+
+    Mat frame;
+    Mat img_denoise;
+    Mat img_edges;
+    Mat img_mask;
+    Mat img_lines;
+    vector<cv::Vec4i> lines;
+    vector<std::vector<cv::Vec4i> > left_right_lines;
+    vector<cv::Point> lane;
+    string turn;
+    int flag_plot = -1;
+
+    // 主要算法开始。遍历视频的每一帧
+    while (true) {
+        // Capture frame
+        if (!cap.read(frame))
+            break;
+        if(waitKey(5)==27)
+            break;
+
+        //图像缩小
+        resize(frame,frame,Size(576,324),0,0,INTER_LINEAR);
+
+        //交通标志检测及显示
+        streetSign(frame);
+
+        // 使用高斯滤波器去噪图像
+        img_denoise = deNoise(frame);
+//        imshow("高斯滤波器去噪图像",frame);
+
+        // 检测图像中的边缘
+        img_edges = edgeDetector(img_denoise);
+//        imshow("检测图像中的边缘",img_edges);
+
+        // 对图像进行掩码，只得到ROI
+        img_mask = mask(img_edges);
+//        imshow("对图像进行掩码，只得到ROI",img_mask);
+
+        // 获取裁剪图像中的霍夫线
+        lines = houghLines(img_mask);
+    //    imshow("裁剪图像中的霍夫线",lines);
+
+        if (!lines.empty())
+        {
+            // 把线分成左行和右行
+            left_right_lines = lineSeparation(lines, img_edges);
+
+            // 应用回归法，使每条泳道的每一侧只能得到一条直线
+            lane = regression(left_right_lines, frame);
+
+            // 通过确定直线的消失点来预测转弯
+            turn = predictTurn();
+
+            // 情节车道检测
+            flag_plot = plotLane(frame, lane, turn);
+
+//            cv::waitKey(1);
+        }
+        else {
+            flag_plot = -1;
+        }
+    }
+
+    return ;
+}
+
+
+//路牌检测
+void LaneDetector::streetSign(Mat img_original){
+    Mat hsv;
+    cvtColor(img_original, hsv, CV_BGR2HSV); //直接转换#HSV颜色空间
+//    imshow("颜色空间",hsv);
+
+
+    //掩码
+    Mat mask1;
+    inRange(hsv, Scalar(155,60,60), Scalar(180,255,255), mask1);
+    Mat mask2;
+    inRange(hsv, Scalar(97,80,45), Scalar(124,255,255), mask2);
+    Mat mask = mask1 + mask2;
+    GaussianBlur(mask, mask,Size(5, 5), 3, 3);//高斯模糊
+//    imshow("mask",mask);
+
+    //二值化
+    Mat binary;
+    threshold(mask, binary,127, 255, CV_THRESH_BINARY);//二值化
+//    imshow("二值化",binary);
+
+    //定义核
+    Mat kernel = getStructuringElement(MORPH_RECT,Size(21,7));
+    //进行形态学操作
+    Mat closed;
+    morphologyEx(binary,closed, MORPH_CLOSE, kernel);
+//    imshow("进行形态学操作",closed);
+
+    Mat img_erode,img_dilate;
+    erode(closed,img_erode, NULL, Point(-1, -1), 4);//腐蚀
+    dilate(img_erode,img_dilate, NULL, Point(-1, -1), 4);//膨胀
+//    imshow("腐蚀-膨胀",img_dilate);
+
+
+    vector<vector<Point>> contours;
+    vector<Vec4i> hierarchy;        //分层
+    findContours(img_dilate, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));//寻找轮廓
+//    cout << contours.size() << endl;
+
+    for (int i = 0; i < contours.size(); i++){
+        double area = contourArea(Mat(contours[i]),false);
+        if(area > 0.055*576*324 || area <0.0012*576*324)
+            continue;
+
+        //变换为旋转矩阵
+        RotatedRect rect=minAreaRect(Mat(contours[i]));
+        //定义一个存储以上四个点的坐标的变量
+        Point2f fourPoint2f[4];
+        //将rectPoint变量中存储的坐标值放到 fourPoint的数组中
+        rect.points(fourPoint2f);
+        Scalar color = (0, 0, 255);//蓝色线画轮廓
+        //根据得到的四个点的坐标  绘制矩形
+        for (int i = 0; i < 3; i++) {
+            line(img_original, fourPoint2f[i], fourPoint2f[i + 1], color, 3);
+        }
+        line(img_original, fourPoint2f[3], fourPoint2f[0], color, 3);
+
+
+        double x,y,width,height;
+        x = y = width = height = 0;
+        x = fourPoint2f[1].x;
+        y = fourPoint2f[1].y;
+        width = fabs(fourPoint2f[0].x - fourPoint2f[3].x);
+        height = fabs(fourPoint2f[0].y - fourPoint2f[1].y);
+
+        for(int i=0;i<4;i++){
+            cout << fourPoint2f[i] << "****" << endl;
+
+        }
+
+cout << x << "-" << y << "-" << width << "-" << height << endl;
+
+        if(x>10 && y>10 && width>80 && height>30){
+            Mat roi = img_original(Rect(x,y,width,height));
+            imshow("裁剪后的图片",roi);
+        }
+
+    }
+
+}
 
 // 图像模糊
 /**
@@ -73,7 +230,7 @@ Mat LaneDetector::mask(Mat img_edges) {
     // 将边缘图像和蒙版相乘得到输出
     bitwise_and(img_edges, mask, output);
 
-    imshow("mask",mask);
+//    imshow("mask",mask);
     return output;
 }
 
