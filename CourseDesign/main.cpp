@@ -11,6 +11,6 @@ using namespace cv;
 int main() {
 
        LaneDetector lanedetector;  // 创建类对象
-       lanedetector.doDetection("F:\\QT_code\\LiuWenguo_homework\\CourseDesign\\loadVideo3.mp4");
+       lanedetector.doDetection("F:\\QT_code\\LiuWenguo_homework\\CourseDesign\\loadVideo1.mp4");
 }
 

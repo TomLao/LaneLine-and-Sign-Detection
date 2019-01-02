@@ -212,25 +212,25 @@ Mat LaneDetector::mask(Mat img_edges) {
     Mat output;
     Mat mask = Mat::zeros(img_edges.size(), img_edges.type());
     Point pts[4] = {
-        //非刘文果给的视频参数   loadVideo.mp4
-        Point(80,368),    //左下角
-        Point(120,280),   //左上角
-        Point(600,280),
-        Point(800,368)    //右下角
+//        //非刘文果给的视频参数   loadVideo.mp4
+//        Point(80,368),    //左下角
+//        Point(120,280),   //左上角
+//        Point(600,280),
+//        Point(800,368)    //右下角
 
-//        //刘文果给的视频参数   loadVideo1.mp4
-//         Point(-120,368),    //左下角
-//         Point(80,250),   //左上角
-//         Point(290,250),
-//         Point(450,368)    //右下角
+        //刘文果给的视频参数   loadVideo1.mp4
+         Point(-120,368),    //左下角
+         Point(50,250),   //左上角
+         Point(290,250),
+         Point(450,368)    //右下角
 
-//        //非刘文果给的视频参数   loadVideo2.mp4
+//        //刘文果给的视频参数   loadVideo2.mp4
 //        Point(-60,368),    //左下角
 //        Point(80,220),   //左上角
 //        Point(450,220),
 //        Point(600,368)    //右下角
 
-//        //非刘文果给的视频参数   loadVideo3.mp4
+//        //刘文果给的视频参数   loadVideo3.mp4
 //         Point(-90,368),    //左下角
 //         Point(40,235),   //左上角
 //         Point(350,235),
@@ -376,7 +376,7 @@ vector<Point> LaneDetector::regression(vector<vector<Vec4i> > left_right_lines, 
 
     // 首先求出了直线的斜率和偏置点，应用直线方程求出了直线点
     int ini_y = inputImage.rows;
-    int fin_y = 280;
+    int fin_y = 250;
 
     double right_ini_x = ((ini_y - right_b.y) / right_m) + right_b.x;
     double right_fin_x = ((fin_y - right_b.y) / right_m) + right_b.x;
@@ -435,15 +435,15 @@ int LaneDetector::plotLane(Mat inputImage, vector<Point> lane, string turn) {
     poly_points.push_back(lane[0]);
     poly_points.push_back(lane[1]);
     poly_points.push_back(lane[3]);
-    fillConvexPoly(output, poly_points, Scalar(0, 0, 255), CV_AA, 0);
+    fillConvexPoly(output, poly_points, Scalar(255, 0, 0), CV_AA, 0);
     addWeighted(output, 0.3, inputImage, 1.0 - 0.3, 0, inputImage);
 
     // 绘制车道边界的两条线
-    line(inputImage, lane[0], lane[1], Scalar(0, 255, 255), 5, CV_AA);
-    line(inputImage, lane[2], lane[3], Scalar(0, 255, 255), 5, CV_AA);
+ /*   line(inputImage, lane[0], lane[1], Scalar(0, 0, 255), 5, CV_AA);
+    line(inputImage, lane[2], lane[3], Scalar(0, 0, 255), 5, CV_AA);*/
 
     // 绘制转弯信息
-    putText(inputImage, turn, Point(50, 90), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+//    putText(inputImage, turn, Point(50, 90), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
 
     // 显示最终输出图像
     namedWindow("Lane", CV_WINDOW_AUTOSIZE);
