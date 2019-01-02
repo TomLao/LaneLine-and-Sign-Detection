@@ -28,9 +28,11 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
 #        worker.cpp
+    lanedetector.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    lanedetector.h
 
 FORMS += \
         mainwindow.ui

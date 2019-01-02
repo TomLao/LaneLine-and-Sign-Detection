@@ -1,14 +1,12 @@
 ﻿#include "mainwindow.h"
+#include "lanedetector.h"
 #include "ui_mainwindow.h"
-//#include "worker.cpp"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-//    string src = "D://MyProject//LearnComputerVersion//FinalProject//test_video//solidYellowLeft.mp4";
-//    videoCapture = cv::VideoCapture(src);
 
     QString title = QString::fromLocal8Bit("HezeLao-RuiweiXie-车道线识别和路牌识别");
     setWindowTitle(title);
@@ -103,9 +101,11 @@ int MainWindow::MyRunner(){
     //获取帧数，不然会播放速度不对
     int length = videoCapture.get(CAP_PROP_FRAME_COUNT)/videoCapture.get(CAP_PROP_FPS);
     double FPS = videoCapture.get(CAP_PROP_FPS);
-    Mat res;
+    Mat res, sign;
+    LaneDetector lanedetector;  // 创建类对象
     while(1){
-        waitKey(1000.0 / FPS);
+//        waitKey(1000.0 / FPS);
+        waitKey(5);
         if(isPause == true) //暂停检测
             continue;
 
@@ -118,14 +118,27 @@ int MainWindow::MyRunner(){
         }
 
         cv::resize(srcFrame, srcFrame, Size(576, 324), 0, 0, INTER_LINEAR);
-        //TODO:从这里出发执行检测算法
-        res = getframe(srcFrame);
+        cvtColor(srcFrame, srcFrame, CV_BGR2RGB);
 
-        qimg = QImage((const uchar*)(res.data),srcFrame.cols,srcFrame.rows, QImage::Format_RGB888); //简单地转换一下为Image对象，rgbSwapped是为了显示效果色彩好一些。
+        //TODO:从这里出发执行检测算法
+//        res = getframe(srcFrame);
+        lanedetector.myDetector(srcFrame);
+        sign = lanedetector.streetSign(srcFrame);
+
+        qimg = QImage((const uchar*)(srcFrame.data),srcFrame.cols,srcFrame.rows, QImage::Format_RGB888); //简单地转换一下为Image对象，rgbSwapped是为了显示效果色彩好一些。
 //        QPixmap fitpixmap = QPixmap::fromImage(qimg).scaled(576, 324, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);  // 饱满填充
 //        ui->label_video->setPixmap(fitpixmap);
         ui->label_video->setPixmap(QPixmap::fromImage(qimg));
         ui->label_video->show();
+
+        if(!sign.empty()){
+            Mat temp = sign.clone();
+            qsign = QImage((const uchar*)(temp.data),temp.cols,temp.rows, QImage::Format_RGB888); //简单地转换一下为Image对象，rgbSwapped是为了显示效果色彩好一些。
+    //        QPixmap fitpixmap = QPixmap::fromImage(qimg).scaled(576, 324, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);  // 饱满填充
+    //        ui->label_video->setPixmap(fitpixmap);
+            ui->label_sign_1->setPixmap(QPixmap::fromImage(qsign));
+            ui->label_sign_1->show();
+        }
     }
     videoCapture.release();
     return 0;

@@ -58,7 +58,7 @@ private:
     bool isLaneLine;            //是否检测到车道线
     bool isSign;                //是否检测到标志
     QTimer *timer;
-    QImage qimg;
+    QImage qimg, qsign;
 
     int gaussianBlurKernal;
 
