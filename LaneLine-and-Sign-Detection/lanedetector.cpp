@@ -117,7 +117,7 @@ void LaneDetector::myDetector(Mat frame){
  * @param img_original
  * @author XieRuiwei LaoHeze
  */
-Mat LaneDetector::streetSign(Mat img_original){
+bool LaneDetector::streetSign(Mat img_original){
     Mat hsv, roi;
     cvtColor(img_original, hsv, COLOR_RGB2HSV); //直接转换#HSV颜色空间
 
@@ -162,7 +162,7 @@ Mat LaneDetector::streetSign(Mat img_original){
         width = fabs(fourPoint2f[0].x - fourPoint2f[3].x);
         height = fabs(fourPoint2f[0].y - fourPoint2f[1].y);
 
-        if(width/height>1.2 && width/height<2.5){           //根据矩形的长宽比  圈出标志牌
+        if(width/height>1.2 && width/height<10.0){           //根据矩形的长宽比  圈出标志牌
             //根据得到的四个点的坐标  绘制矩形
             Scalar color = (0, 0, 255);                     //蓝色线画轮廓
             for (int i = 0; i < 3; i++) {
@@ -171,14 +171,17 @@ Mat LaneDetector::streetSign(Mat img_original){
             line(img_original, fourPoint2f[3], fourPoint2f[0], color, 3);
 
             //显示裁剪后的图片
-            if(x>50 && y>50 && width >50 && height >20){
+            if(x>50 && y>50 && width >50 && height >30){
                 roi.release();
-                roi = img_original(Rect(x,y,width,height));
+                roi = img_original(Rect(x,y,width,height)).clone();
                 imshow("裁剪后的图片",roi);
+                cvtColor(roi, roi, COLOR_BGR2RGB);
+                imwrite("cut.jpg", roi);
+                return true;
             }
         }
     }
-    return roi;
+    return false;
 }
 
 
@@ -230,17 +233,17 @@ Mat LaneDetector::mask(Mat img_edges) {
     Mat output;
     Mat mask = Mat::zeros(img_edges.size(), img_edges.type());
     Point pts[4] = {
-        //        //非老师给的视频参数   loadVideo.mp4
-        //        Point(80,368),    //左下角
-        //        Point(120,280),   //左上角
-        //        Point(600,280),
-        //        Point(800,368)    //右下角
+                //非老师给的视频参数   loadVideo.mp4
+                Point(80,368),    //左下角
+                Point(120,280),   //左上角
+                Point(600,280),
+                Point(800,368)    //右下角
 
-        //老师给的视频参数，长的   loadVideo1.mp4 2.MP4
-        Point(-120,368),    //左下角
-        Point(50,250),   //左上角
-        Point(290,250),
-        Point(450,368)    //右下角
+//        //老师给的视频参数，长的   loadVideo1.mp4 2.MP4
+//        Point(-120,368),    //左下角
+//        Point(50,250),   //左上角
+//        Point(290,250),
+//        Point(450,368)    //右下角
 
         //        //老师给的视频参数   loadVideo2.mp4 1.MP4
         //        Point(-60,368),    //左下角

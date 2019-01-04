@@ -35,16 +35,16 @@ public:
 
 protected:
     Mat getframe(Mat image);
-    int MyRunner();
+    int MyRunner(bool isSign);
     Mat start(Mat frame);
 
 
 private slots:
     void on_pushButton_open_clicked();
-    void on_pushButton_start_clicked();
+    void on_pushButton_start_line_clicked();
+    void on_pushButton_start_sign_clicked();
     void on_pushButton_pause_clicked();
     void on_pushButton_stop_clicked();
-    void GetValue(int value);
 
 private:
     Ui::MainWindow *ui;

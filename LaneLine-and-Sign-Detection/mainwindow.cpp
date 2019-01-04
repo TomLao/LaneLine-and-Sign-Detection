@@ -20,33 +20,6 @@ MainWindow::MainWindow(QWidget *parent) :
     isLaneLine = true;
     isSign = true;
     gaussianBlurKernal = 1;     //测试调节用，改变高斯模糊核
-
-
-    //调节控制QSlider初始化
-//    int nMin = 0;
-//    int nMax = 200;
-//    int nSingleStep = 10;
-    int nMin = 1;
-    int nMax = 15;
-    int nSingleStep = 2;
-    // 微调框
-    QSpinBox *pSpinBox = ui->spinBox;
-    pSpinBox->setMinimum(nMin);  // 最小值
-    pSpinBox->setMaximum(nMax);  // 最大值
-    pSpinBox->setSingleStep(nSingleStep);  // 步长
-    // 滑动条
-    QSlider *pSlider = ui->horizontalSlider;
-    pSlider->setOrientation(Qt::Horizontal);  // 水平方向
-    pSlider->setMinimum(nMin);  // 最小值
-    pSlider->setMaximum(nMax);  // 最大值
-    pSlider->setSingleStep(nSingleStep);  // 步长
-    pSlider->setTickPosition(QSlider::TicksAbove);  //刻度
-    // 连接信号槽（相互改变）
-    connect(pSpinBox, SIGNAL(valueChanged(int)), pSlider, SLOT(setValue(int)));
-    connect(pSlider, SIGNAL(valueChanged(int)), pSpinBox, SLOT(setValue(int)));
-    pSpinBox->setValue(1);
-
-    connect(pSpinBox, SIGNAL(valueChanged(int)), this, SLOT(GetValue(int)));    //连接程序与滑动条，接收值
 }
 
 MainWindow::~MainWindow()
@@ -54,12 +27,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::GetValue(int value){
-    int val = ui->spinBox->value();
-    if(val%2!=0)
-        this->gaussianBlurKernal = val;
-    cout<<val<<endl;    //val与value二选一都行
-}
 
 Mat MainWindow::getframe(Mat image){
 //    videoCapture>>srcFrame; //从视频取帧
@@ -87,7 +54,7 @@ Mat MainWindow::getframe(Mat image){
  * @author HezeLao
  * @date 2018-12-28 23:24
  */
-int MainWindow::MyRunner(){
+int MainWindow::MyRunner(bool isSign){
     isStart = true;
 
     VideoCapture videoCapture(videoPath);
@@ -101,7 +68,9 @@ int MainWindow::MyRunner(){
     //获取帧数，不然会播放速度不对
     int length = videoCapture.get(CAP_PROP_FRAME_COUNT)/videoCapture.get(CAP_PROP_FPS);
     double FPS = videoCapture.get(CAP_PROP_FPS);
-    Mat res, sign;
+    Mat res;
+    bool haveSign;
+    int countShow=1;
     LaneDetector lanedetector;  // 创建类对象
     while(1){
 //        waitKey(1000.0 / FPS);
@@ -113,32 +82,43 @@ int MainWindow::MyRunner(){
 
         if(srcFrame.empty() || isStop == true){
             ui->label_video->clear();   //视频结束或按下结束按钮，清理播放窗口，退出
+            ui->label_sign_1->clear();
+            ui->label_sign_2->clear();
             videoCapture.release();
             break;
         }
 
         cv::resize(srcFrame, srcFrame, Size(576, 324), 0, 0, INTER_LINEAR);
-        cvtColor(srcFrame, srcFrame, CV_BGR2RGB);
+        cvtColor(srcFrame, srcFrame, COLOR_BGR2RGB);
 
         //TODO:从这里出发执行检测算法
 //        res = getframe(srcFrame);
-        lanedetector.myDetector(srcFrame);
-        sign = lanedetector.streetSign(srcFrame);
 
-        qimg = QImage((const uchar*)(srcFrame.data),srcFrame.cols,srcFrame.rows, QImage::Format_RGB888); //简单地转换一下为Image对象，rgbSwapped是为了显示效果色彩好一些。
-//        QPixmap fitpixmap = QPixmap::fromImage(qimg).scaled(576, 324, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);  // 饱满填充
-//        ui->label_video->setPixmap(fitpixmap);
-        ui->label_video->setPixmap(QPixmap::fromImage(qimg));
-        ui->label_video->show();
-
-        if(!sign.empty()){
-            Mat temp = sign.clone();
-            qsign = QImage((const uchar*)(temp.data),temp.cols,temp.rows, QImage::Format_RGB888); //简单地转换一下为Image对象，rgbSwapped是为了显示效果色彩好一些。
-    //        QPixmap fitpixmap = QPixmap::fromImage(qimg).scaled(576, 324, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);  // 饱满填充
-    //        ui->label_video->setPixmap(fitpixmap);
-            ui->label_sign_1->setPixmap(QPixmap::fromImage(qsign));
-            ui->label_sign_1->show();
+        if(isSign){
+            haveSign = lanedetector.streetSign(srcFrame);
+            qimg = QImage((const uchar*)(srcFrame.data),srcFrame.cols,srcFrame.rows, QImage::Format_RGB888); //简单地转换一下为Image对象，rgbSwapped是为了显示效果色彩好一些。
+            ui->label_video->setPixmap(QPixmap::fromImage(qimg));
+            ui->label_video->show();
+            if(haveSign){
+                qsign = QImage("cut.jpg");  //读取截取的路牌
+                if(countShow%50==0){
+                    ui->label_sign_1->setPixmap(QPixmap::fromImage(qsign));
+                    ui->label_sign_1->show();
+                }
+                else if(countShow%50==25){
+                    ui->label_sign_2->setPixmap(QPixmap::fromImage(qsign));
+                    ui->label_sign_2->show();
+                }
+                countShow++;
+            }
+        }else{
+            lanedetector.myDetector(srcFrame);
+            qimg = QImage((const uchar*)(srcFrame.data),srcFrame.cols,srcFrame.rows, QImage::Format_RGB888); //简单地转换一下为Image对象，rgbSwapped是为了显示效果色彩好一些。
+            ui->label_video->setPixmap(QPixmap::fromImage(qimg));
+            ui->label_video->show();
         }
+
+
     }
     videoCapture.release();
     return 0;
@@ -167,16 +147,11 @@ void MainWindow::on_pushButton_open_clicked(){
 
 
 /**
- * @brief MainWindow::on_pushButton_start_clicked 点击开始检测
+ * @brief MainWindow::on_pushButton_start_line_clicked 点击开始检测车道线
  * @author HezeLao
  * @date 2018-12-28 21:50
  */
-void MainWindow::on_pushButton_start_clicked(){
-//    Mat image = imread("D://MyProject//LearnComputerVersion//FinalProject//images//dark-shades.png");
-//    timer = new QTimer(this);
-//    connect(timer,SIGNAL(timeout()),this,SLOT(getframe()));timer->start(42);//按照每秒24帧计算，每过42ms执行一次getframe
-//    cout << "debug:开始检测事件" << endl;
-
+void MainWindow::on_pushButton_start_line_clicked(){
     //正在运行检测中
     if(isStart == true && isPause == false){
         cout << "debug:正在检测中" << endl;
@@ -192,7 +167,58 @@ void MainWindow::on_pushButton_start_clicked(){
 
     //初次点击开始，检查是否选择目标视频
     if(isOpen == true){
-        if(!MyRunner()){
+        if(!MyRunner(false)){
+            //成功开始检测
+            cout << "debug:成功开始检测" << endl;
+            isOpen = false;
+            isStart = false;
+            isPause = false;
+            isStop = false;
+        }
+        else{
+            //检测失败
+            cout << "debug:检测失败" << endl;
+        }
+    }
+    else{
+        cout << "debug:未选择文件" << endl;
+        QMessageBox box(QMessageBox::Warning,"warning",QString::fromLocal8Bit("请先选择视频文件"));
+        box.setStandardButtons (QMessageBox::Ok|QMessageBox::Cancel);
+        box.setButtonText (QMessageBox::Ok,QString::fromLocal8Bit("打开文件"));
+        box.setButtonText (QMessageBox::Cancel,QString::fromLocal8Bit("取消"));
+        auto select = box.exec ();
+        if(select == QMessageBox::Ok){
+            on_pushButton_open_clicked();
+        }
+        return;
+    }
+
+    cout << "debug:结束检测事件" << endl;
+}
+
+
+/**
+ * @brief MainWindow::on_pushButton_sign_clicked 点击开始检测
+ * @author HezeLao
+ * @date 2018-12-28 21:50
+ */
+void MainWindow::on_pushButton_start_sign_clicked(){
+    //正在运行检测中
+    if(isStart == true && isPause == false){
+        cout << "debug:正在检测中" << endl;
+        return;
+    }
+
+    //从暂停恢复检测
+    if(isPause == true){
+        isPause = false;
+        cout << "debug:从暂停恢复检测" << endl;
+        return;
+    }
+
+    //初次点击开始，检查是否选择目标视频
+    if(isOpen == true){
+        if(!MyRunner(true)){
             //成功开始检测
             cout << "debug:成功开始检测" << endl;
             isOpen = false;

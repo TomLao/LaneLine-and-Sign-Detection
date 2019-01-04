@@ -24,7 +24,7 @@ public:
     Mat deNoise(Mat inputImage);  // 对输入图像应用高斯模糊
     Mat edgeDetector(Mat img_noise);  // 过滤图像，只获取边缘
     Mat mask(Mat img_edges);  // 掩盖边缘图像，只关心ROI
-    Mat streetSign(Mat img_original);//路牌检测
+    bool streetSign(Mat img_original);//路牌检测
     vector<Vec4i> houghLines(Mat img_mask);  // 检测蒙面边缘图像中的霍夫线
     vector<vector<Vec4i> > lineSeparation(vector<Vec4i> lines, Mat img_edges);  // Sprt通过直线的斜率检测出左右直线
     vector<Point> regression(vector<vector<Vec4i> > left_right_lines, Mat inputImage);  //每条车道只能排一条线
