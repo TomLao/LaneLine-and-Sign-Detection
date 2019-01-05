@@ -24,92 +24,18 @@ void LaneDetector::myDetector(Mat frame){
     vector<cv::Vec4i> lines;
     vector<std::vector<cv::Vec4i> > left_right_lines;
     vector<cv::Point> lane;
-//    string turn;
 
-//    streetSign(frame);  //交通标志检测及显示
-
-    img_denoise = deNoise(frame);// 使用高斯滤波器去噪图像
-    img_edges = edgeDetector(img_denoise);// 检测图像中的边缘
-    img_mask = mask(img_edges);// 对图像进行掩码，只得到ROI
-    lines = houghLines(img_mask);//霍夫变换
+    img_denoise = deNoise(frame);           // 使用高斯滤波器去噪图像
+    img_edges = edgeDetector(img_denoise);  // 检测图像中的边缘
+    img_mask = mask(img_edges);             // 对图像进行掩码，只得到ROI
+    lines = houghLines(img_mask);           //霍夫变换
 
     if (!lines.empty()) {
         left_right_lines = lineSeparation(lines, img_edges);// 把线分成左行和右行
-        lane = regression(left_right_lines, frame);// 应用回归法，使每条泳道的每一侧只能得到一条直线
-        //turn = predictTurn();// 通过确定直线的消失点来预测转弯
-        //plotLane(frame, lane, turn);// 画出车道线
-        plotLane(frame, lane);// 画出车道线
+        lane = regression(left_right_lines, frame);         // 应用回归法，使每条泳道的每一侧只能得到一条直线
+        plotLane(frame, lane);  // 画出车道线
     }
 }
-
-
-//运行检测代码块
-//void LaneDetector::doDetection(String videoPath){
-//    // The input argument is the location of the video
-//    cv::VideoCapture cap(videoPath);
-//    if (!cap.isOpened())
-//        return ;
-//    Mat frame;
-//    Mat img_denoise;
-//    Mat img_edges;
-//    Mat img_mask;
-//    Mat img_lines;
-//    vector<cv::Vec4i> lines;
-//    vector<std::vector<cv::Vec4i> > left_right_lines;
-//    vector<cv::Point> lane;
-//    string turn;
-//    int flag_plot = -1;
-
-//    // 主要算法开始。遍历视频的每一帧
-//    while (true) {
-//        if (!cap.read(frame))
-//            break;
-//        if(waitKey(1)==27)
-//            break;
-
-//        //图像缩小
-//        resize(frame,frame,Size(576,324),0,0,INTER_LINEAR);
-
-//        //交通标志检测及显示
-//        streetSign(frame);
-
-//        // 使用高斯滤波器去噪图像
-//        img_denoise = deNoise(frame);
-//        //        imshow("高斯滤波器去噪图像",frame);
-
-//        // 检测图像中的边缘
-//        img_edges = edgeDetector(img_denoise);
-//        //        imshow("检测图像中的边缘",img_edges);
-
-//        // 对图像进行掩码，只得到ROI
-//        img_mask = mask(img_edges);
-//        //        imshow("对图像进行掩码，只得到ROI",img_mask);
-
-//        // 获取裁剪图像中的霍夫线
-//        lines = houghLines(img_mask);
-//        //   imshow("裁剪图像中的霍夫线",lines);
-
-//        if (!lines.empty())
-//        {
-//            // 把线分成左行和右行
-//            left_right_lines = lineSeparation(lines, img_edges);
-
-//            // 应用回归法，使每条泳道的每一侧只能得到一条直线
-//            lane = regression(left_right_lines, frame);
-
-//            // 通过确定直线的消失点来预测转弯
-//            turn = predictTurn();
-
-//            // 情节车道检测
-//            flag_plot = plotLane(frame, lane, turn);
-//        }
-//        else {
-//            flag_plot = -1;
-//        }
-//    }
-
-//    return ;
-//}
 
 
 /**
@@ -162,7 +88,7 @@ bool LaneDetector::streetSign(Mat img_original){
         width = fabs(fourPoint2f[0].x - fourPoint2f[3].x);
         height = fabs(fourPoint2f[0].y - fourPoint2f[1].y);
 
-        if(width/height>1.2 && width/height<10.0){           //根据矩形的长宽比  圈出标志牌
+        if(width/height>1.2 && width/height<10.0){          //根据矩形的长宽比  圈出标志牌
             //根据得到的四个点的坐标  绘制矩形
             Scalar color = (0, 0, 255);                     //蓝色线画轮廓
             for (int i = 0; i < 3; i++) {
@@ -174,7 +100,7 @@ bool LaneDetector::streetSign(Mat img_original){
             if(x>50 && y>50 && width >50 && height >30){
                 roi.release();
                 roi = img_original(Rect(x,y,width,height)).clone();
-                imshow("裁剪后的图片",roi);
+                //imshow("裁剪后的图片",roi);
                 cvtColor(roi, roi, COLOR_BGR2RGB);
                 imwrite("cut.jpg", roi);
                 return true;
@@ -233,29 +159,29 @@ Mat LaneDetector::mask(Mat img_edges) {
     Mat output;
     Mat mask = Mat::zeros(img_edges.size(), img_edges.type());
     Point pts[4] = {
-                //非老师给的视频参数   loadVideo.mp4
-                Point(80,368),    //左下角
-                Point(120,280),   //左上角
-                Point(600,280),
-                Point(800,368)    //右下角
+        //非老师给的视频参数   loadVideo.mp4
+        Point(80,368),    //左下角
+        Point(120,280),   //左上角
+        Point(600,280),
+        Point(800,368)    //右下角
 
-//        //老师给的视频参数，长的   loadVideo1.mp4 2.MP4
-//        Point(-120,368),    //左下角
-//        Point(50,250),   //左上角
-//        Point(290,250),
-//        Point(450,368)    //右下角
+        //loadVideo1.mp4 2.MP4
+        //Point(-120,368),    //左下角
+        //Point(50,250),   //左上角
+        //Point(290,250),
+        //Point(450,368)    //右下角
 
-        //        //老师给的视频参数   loadVideo2.mp4 1.MP4
-        //        Point(-60,368),    //左下角
-        //        Point(80,220),   //左上角
-        //        Point(450,220),
-        //        Point(600,368)    //右下角
+        //loadVideo2.mp4 1.MP4
+        //Point(-60,368),    //左下角
+        //Point(80,220),   //左上角
+        //Point(450,220),
+        //Point(600,368)    //右下角
 
-        //        //刘文果给的视频参数   loadVideo3.mp4 4.mp4
-        //         Point(-90,368),    //左下角
-        //         Point(40,235),   //左上角
-        //         Point(350,235),
-        //         Point(650,368)    //右下角
+        //loadVideo3.mp4 4.mp4
+        //Point(-90,368),    //左下角
+        //Point(40,235),   //左上角
+        //Point(350,235),
+        //Point(650,368)    //右下角
     };
 
     fillConvexPoly(mask, pts, 4, Scalar(255, 0, 0));    //掩模填充
@@ -408,29 +334,6 @@ vector<Point> LaneDetector::regression(vector<vector<Vec4i> > left_right_lines, 
     return output;
 }
 
-/**
- * @brief 预测, 预测车道是左转、右转还是直走
- * @brief 通过查看消失点相对于图像中心的位置来完成
- * @return 字符串，表示是否有左或右转弯或道路是否笔直
- */
-//string LaneDetector::predictTurn() {
-//    string output;
-//    double vanish_x;
-//    double thr_vp = 10;
-
-//    // 消失点是两个车道边界线相交的点
-//    vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
-
-//    // 消失点的位置决定了道路转弯的位置
-//    if (vanish_x < (img_center - thr_vp))
-//        output = "Left Turn";
-//    else if (vanish_x >(img_center + thr_vp))
-//        output = "Right Turn";
-//    else if (vanish_x >= (img_center - thr_vp) && vanish_x <= (img_center + thr_vp))
-//        output = "Straight";
-
-//    return output;
-//}
 
 //绘制结果
 /**
@@ -438,7 +341,6 @@ vector<Point> LaneDetector::regression(vector<vector<Vec4i> > left_right_lines, 
  * @param inputImage是原始捕获帧
  * @param lane是包含两条直线信息的向量
  * @param turn是包含转弯信息的输出字符串
- * @return函数返回0
  */
 void LaneDetector::plotLane(Mat inputImage, vector<Point> lane) {
     vector<Point> poly_points;
@@ -452,16 +354,4 @@ void LaneDetector::plotLane(Mat inputImage, vector<Point> lane) {
     poly_points.push_back(lane[3]);
     fillConvexPoly(output, poly_points, Scalar(255, 0, 0), CV_AA, 0);
     addWeighted(output, 0.3, inputImage, 1.0 - 0.3, 0, inputImage);
-
-    // 绘制车道边界的两条线
-    //    line(inputImage, lane[0], lane[1], Scalar(0, 0, 255), 5, CV_AA);
-    //    line(inputImage, lane[2], lane[3], Scalar(0, 0, 255), 5, CV_AA);
-
-    // 绘制转弯信息
-    //    putText(inputImage, turn, Point(50, 90), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-
-    // 显示最终输出图像
-    //    namedWindow("Lane", CV_WINDOW_AUTOSIZE);
-    //    imshow("Lane", inputImage);
-    //    return 0;
 }

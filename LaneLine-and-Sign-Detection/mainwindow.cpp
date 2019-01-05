@@ -19,33 +19,11 @@ MainWindow::MainWindow(QWidget *parent) :
     isStop = false;
     isLaneLine = true;
     isSign = true;
-    gaussianBlurKernal = 1;     //测试调节用，改变高斯模糊核
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-}
-
-
-Mat MainWindow::getframe(Mat image){
-//    videoCapture>>srcFrame; //从视频取帧
-//    if(!srcFrame.data)
-//        timer->stop();//如果取不到数据，终止计时器
-//    cvtColor(srcFrame, srcFrame, CV_BGR2RGB);
-
-//    //TODO:写识别代码
-////    start(srcFrame);
-
-//    qimg = QImage((const uchar*)srcFrame.data,srcFrame.cols,srcFrame.rows, QImage::Format_RGB888); //简单地转换一下为Image对象，rgbSwapped是为了显示效果色彩好一些。
-//    //ui->label->clear();
-//    QPixmap fitpixmap = QPixmap::fromImage(qimg).scaled(576, 324, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);  // 饱满填充
-//    ui->labelVideo->setPixmap(fitpixmap);
-
-
-    cvtColor(image, image, CV_BGR2RGB);
-    GaussianBlur(image, image, Size(gaussianBlurKernal, gaussianBlurKernal), 2, 2);
-    return image;
 }
 
 
@@ -91,9 +69,7 @@ int MainWindow::MyRunner(bool isSign){
         cv::resize(srcFrame, srcFrame, Size(576, 324), 0, 0, INTER_LINEAR);
         cvtColor(srcFrame, srcFrame, COLOR_BGR2RGB);
 
-        //TODO:从这里出发执行检测算法
-//        res = getframe(srcFrame);
-
+        //TODO:从这里出发执行检测算法，分别调用路牌检测和车道线检测
         if(isSign){
             haveSign = lanedetector.streetSign(srcFrame);
             qimg = QImage((const uchar*)(srcFrame.data),srcFrame.cols,srcFrame.rows, QImage::Format_RGB888); //简单地转换一下为Image对象，rgbSwapped是为了显示效果色彩好一些。

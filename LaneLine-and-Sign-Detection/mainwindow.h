@@ -34,7 +34,6 @@ public:
 
 
 protected:
-    Mat getframe(Mat image);
     int MyRunner(bool isSign);
     Mat start(Mat frame);
 
@@ -48,7 +47,6 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-//    VideoCapture videoCapture;
     Mat srcFrame;
     string videoPath;
     bool isOpen;                //是否选择并打开页面
@@ -59,8 +57,6 @@ private:
     bool isSign;                //是否检测到标志
     QTimer *timer;
     QImage qimg, qsign;
-
-    int gaussianBlurKernal;
 
     void closeEvent(QCloseEvent *enent);
 };
